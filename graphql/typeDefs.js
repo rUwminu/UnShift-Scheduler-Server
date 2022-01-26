@@ -40,8 +40,8 @@ module.exports = gql`
   type Query {
     getUsers: [User]
     getUser(userId: ID!): User
-    getAllEvent: [Event]
-    getSelfEvent: [Event]
+    getAllEvent(month: Int!, year: Int!): [Event]
+    getSelfEvent(month: Int!, year: Int!): [Event]
   }
   type Mutation {
     register(registerInput: RegisterInput): User!
@@ -58,5 +58,9 @@ module.exports = gql`
     updateCompEvent(evtId: ID!): Event!
     updateRescEvent(evtId: ID!, planDate: String!): Event!
     updateCancelEvent(evtId: ID!): Event!
+  }
+  type Subscription {
+    eventCreated: Event
+    eventUpdated: Event
   }
 `

@@ -1,10 +1,15 @@
+const { PubSub } = require('graphql-subscriptions')
+const { UserInputError } = require('apollo-server-express')
+
 const User = require('../../models/User')
 const Event = require('../../models/Event')
 const checkAuth = require('../../utils/checkAuth')
 
+const pubsub = new PubSub()
+
 module.exports = {
   Query: {
-    async getAllEvent(_, __, context) {
+    async getAllEvent(_, { month, year }, context) {
       const user = checkAuth(context)
 
       if (!user) {
@@ -23,6 +28,16 @@ module.exports = {
 
       const events = await Event.find({
         user: { $ne: user.id },
+        $expr: {
+          $or: [
+            {
+              $and: [
+                { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
+                { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
+              ],
+            },
+          ],
+        },
       }).sort({
         createdAt: -1,
       })
@@ -44,7 +59,7 @@ module.exports = {
 
       return events
     },
-    async getSelfEvent(_, __, context) {
+    async getSelfEvent(_, { month, year }, context) {
       const user = checkAuth(context)
 
       if (!user) {
@@ -55,7 +70,19 @@ module.exports = {
         })
       }
 
-      const events = await Event.find({ user: user.id }).sort({
+      const events = await Event.find({
+        user: user.id,
+        $expr: {
+          $or: [
+            {
+              $and: [
+                { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
+                { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
+              ],
+            },
+          ],
+        },
+      }).sort({
         createdAt: -1,
       })
 
@@ -91,6 +118,14 @@ module.exports = {
 
       const res = await newEvent.save()
 
+      pubsub.publish('EVENT_CREATED', {
+        eventCreated: {
+          id: res._id,
+          ...res._doc,
+          user: user,
+        },
+      })
+
       return { id: res._id, ...res._doc, user: user }
     },
     async updateCompEvent(_, { evtId }, context) {
@@ -116,6 +151,14 @@ module.exports = {
           },
           { new: true }
         )
+
+        pubsub.publish('EVENT_UPDATED', {
+          eventUpdated: {
+            id: updateComplete._id,
+            ...updateComplete._doc,
+            user: user,
+          },
+        })
 
         return updateComplete
       } catch (err) {
@@ -155,6 +198,23 @@ module.exports = {
 
           const res = await newEvent.save()
 
+          pubsub.publish('EVENT_UPDATED', {
+            eventCreated: {
+              id: updateReschedule._id,
+              ...updateReschedule._doc,
+              user: user,
+              isRescheduled: true,
+            },
+          })
+
+          pubsub.publish('EVENT_CREATED', {
+            eventUpdated: {
+              id: res._id,
+              ...res._doc,
+              user: user,
+            },
+          })
+
           return { id: res._id, ...res._doc, user: user }
         }
       } catch (err) {
@@ -183,10 +243,30 @@ module.exports = {
           { new: true }
         )
 
+        pubsub.publish('EVENT_UPDATED', {
+          eventUpdated: {
+            id: deleteEvent._id,
+            ...deleteEvent._doc,
+            user: user,
+          },
+        })
+
         return deleteEvent
       } catch (err) {
         throw new Error(err)
       }
+    },
+  },
+  Subscription: {
+    eventCreated: {
+      subscribe: async () => {
+        return pubsub.asyncIterator('EVENT_CREATED')
+      },
+    },
+    eventUpdated: {
+      subscribe: async () => {
+        return pubsub.asyncIterator('EVENT_UPDATED')
+      },
     },
   },
 }
