@@ -30,12 +30,10 @@ module.exports = gql`
   }
   input CreateEventInput {
     title: String!
-    description: String!
+    description: String
     planDate: String!
     compDate: String = ""
     isCompleted: Boolean = false
-    isRescheduled: Boolean = false
-    isCancelled: Boolean = false
   }
   type Query {
     getUsers: [User]

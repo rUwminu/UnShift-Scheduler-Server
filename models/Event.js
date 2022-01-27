@@ -7,12 +7,27 @@ const eventSchema = new Schema(
       ref: 'users',
     },
     title: String,
-    description: String,
+    description: {
+      type: String,
+      default: '',
+    },
     planDate: String,
-    compDate: String,
-    isCompleted: Boolean,
-    isRescheduled: Boolean,
-    isCancelled: Boolean,
+    compDate: {
+      type: String,
+      default: '',
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    isRescheduled: {
+      type: Boolean,
+      default: false,
+    },
+    isCancelled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 )
