@@ -27,6 +27,7 @@ module.exports = gql`
     isCompleted: Boolean!
     isRescheduled: Boolean!
     isCancelled: Boolean!
+    remark: String!
   }
   input CreateEventInput {
     title: String!
@@ -54,8 +55,9 @@ module.exports = gql`
     deleteUser(userId: ID!): String!
     createNewEvent(createEventInput: CreateEventInput): Event!
     updateCompEvent(evtId: ID!): Event!
+    updateForeEvent(evtId: ID!): Event!
     updateRescEvent(evtId: ID!, planDate: String!): Event!
-    updateCancelEvent(evtId: ID!): Event!
+    updateCancelEvent(evtId: ID!, remark: String!): Event!
   }
   type Subscription {
     eventCreated: Event

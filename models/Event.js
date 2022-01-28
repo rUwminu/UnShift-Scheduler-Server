@@ -28,6 +28,10 @@ const eventSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    remark: {
+      type: String,
+      default: '',
+    },
   },
   { timestamps: true }
 )

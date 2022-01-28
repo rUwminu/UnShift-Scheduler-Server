@@ -147,6 +147,7 @@ module.exports = {
           {
             $set: {
               isCompleted: true,
+              compDate: Date.now().format('YYYY-MM-DDTHH:mm:ss').toString(),
             },
           },
           { new: true }
@@ -161,6 +162,44 @@ module.exports = {
         })
 
         return updateComplete
+      } catch (err) {
+        throw new Error(err)
+      }
+    },
+    async updateForeEvent(_, { evtId }, context) {
+      const user = checkAuth(context)
+
+      if (!user) {
+        throw new UserInputError('User Must Login', {
+          errors: {
+            login: 'User Not Login',
+          },
+        })
+      }
+
+      try {
+        const updateForecast = await Event.findByIdAndUpdate(
+          {
+            _id: evtId,
+          },
+          {
+            $set: {
+              isCompleted: false,
+              compDate: '',
+            },
+          },
+          { new: true }
+        )
+
+        pubsub.publish('EVENT_UPDATED', {
+          updateForecast: {
+            id: updateForecast._id,
+            ...updateForecast._doc,
+            user: user,
+          },
+        })
+
+        return updateForecast
       } catch (err) {
         throw new Error(err)
       }
@@ -221,7 +260,7 @@ module.exports = {
         throw new Error(err)
       }
     },
-    async updateCancelEvent(_, { evtId }, context) {
+    async updateCancelEvent(_, { evtId, remark }, context) {
       const user = checkAuth(context)
 
       if (!user) {
@@ -238,6 +277,7 @@ module.exports = {
           {
             $set: {
               isCancelled: true,
+              remark,
             },
           },
           { new: true }
