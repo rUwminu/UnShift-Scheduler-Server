@@ -1,3 +1,4 @@
+const jwtDecode = require('jwt-decode')
 const cors = require('cors')
 const dotenv = require('dotenv')
 const express = require('express')
@@ -39,7 +40,35 @@ dotenv.config()
   })
 
   const subscriptionServer = SubscriptionServer.create(
-    { schema, execute, subscribe },
+    {
+      schema,
+      execute,
+      subscribe,
+      onConnect: (connectionParams, webSocket, context) => {
+        const {
+          headers: { Authorization },
+        } = connectionParams
+        const parts = Authorization.split(' ')
+        const credential = parts[1]
+
+        if (credential) {
+          const subscribeUser = jwtDecode(credential)
+          return {
+            user: subscribeUser,
+          }
+        }
+
+        throw new Error('Missing auth token!')
+      },
+      onOperation: (_, params) => {
+        return {
+          ...params,
+          context: {
+            ...params.context,
+          },
+        }
+      },
+    },
     { server: httpServer, path: '/graphql' }
   )
 
@@ -58,7 +87,7 @@ dotenv.config()
         },
       },
     ],
-    context: ({ req }) => ({ req }),
+    context: ({ req }) => ({ req, user: req.user }),
   })
 
   await server.start().then(() => {

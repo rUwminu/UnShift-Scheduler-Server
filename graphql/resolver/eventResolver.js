@@ -1,4 +1,4 @@
-const { PubSub } = require('graphql-subscriptions')
+const { PubSub, withFilter } = require('graphql-subscriptions')
 const { UserInputError } = require('apollo-server-express')
 
 const User = require('../../models/User')
@@ -299,14 +299,56 @@ module.exports = {
   },
   Subscription: {
     eventCreated: {
-      subscribe: async () => {
-        return pubsub.asyncIterator('EVENT_CREATED')
+      resolve: (payload, args, context) => {
+        if (payload && payload.eventCreated) {
+          return payload.eventCreated
+        }
+        return payload
       },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('EVENT_CREATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else if (payload.eventCreated.user.id === user.id) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
     },
     eventUpdated: {
-      subscribe: async () => {
-        return pubsub.asyncIterator('EVENT_UPDATED')
+      resolve: (payload, args, context) => {
+        if (payload && payload.eventUpdated) {
+          return payload.eventUpdated
+        }
+        return payload
       },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('EVENT_UPDATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else if (payload.eventCreated.user.id === user.id) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
     },
   },
 }
