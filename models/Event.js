@@ -6,7 +6,14 @@ const eventSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'users',
     },
-    title: String,
+    title: {
+      type: String,
+      default: '',
+    },
+    customer: {
+      type: Schema.Types.ObjectId,
+      ref: 'customers',
+    },
     description: {
       type: String,
       default: '',

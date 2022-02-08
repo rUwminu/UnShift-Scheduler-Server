@@ -21,6 +21,7 @@ module.exports = gql`
     id: ID!
     user: User!
     title: String!
+    # customer: String!
     description: String!
     planDate: String!
     compDate: String!
@@ -31,6 +32,7 @@ module.exports = gql`
   }
   input CreateEventInput {
     title: String!
+    customer: String!
     description: String
     planDate: String!
     compDate: String = ""
