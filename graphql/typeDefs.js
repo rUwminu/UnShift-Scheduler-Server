@@ -41,6 +41,8 @@ module.exports = gql`
     getUser(userId: ID!): User
     getAllEvent(month: Int!, year: Int!): [Event]
     getSelfEvent(month: Int!, year: Int!): [Event]
+    getSelfSelectedEvent(startDate: String!, endDate: String): [Event]
+    getAllSelectedEvent(startDate: String!, endDate: String): [Event]
   }
   type Mutation {
     register(registerInput: RegisterInput): User!

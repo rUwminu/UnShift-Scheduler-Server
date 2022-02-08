@@ -98,6 +98,101 @@ module.exports = {
 
       return events
     },
+    async getSelfSelectedEvent(_, { startDate, endDate }, context) {
+      const user = checkAuth(context)
+
+      if (!user) {
+        throw new UserInputError('User Must Login', {
+          errors: {
+            login: 'User Not Login',
+          },
+        })
+      }
+
+      var events = []
+      if (endDate === null || endDate === '') {
+        events = await Event.find({
+          user: user.id,
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
+      } else {
+        events = await Event.find({
+          user: user.id,
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+            $lte: new Date(endDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
+      }
+
+      events.forEach((evt, idx, theArray) => {
+        const { _id, ...evtRest } = evt._doc
+        const evtObj = {
+          id: _id,
+          ...evtRest,
+          user,
+        }
+        theArray[idx] = evtObj
+      })
+
+      return events
+    },
+    async getAllSelectedEvent(_, { startDate, endDate }, context) {
+      const user = checkAuth(context)
+
+      if (!user || !user.isManager) {
+        throw new UserInputError('User Must Login', {
+          errors: {
+            login: 'User Not Login',
+          },
+        })
+      }
+
+      var events = []
+      if (endDate === null || endDate === '') {
+        events = await Event.find({
+          user: { $ne: user.id },
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
+      } else {
+        events = await Event.find({
+          user: { $ne: user.id },
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+            $lte: new Date(endDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
+      }
+
+      let idx = 0
+      for (const evt of events) {
+        const { _id, user: userId, ...evtRest } = evt._doc
+
+        const evtUser = await User.findById(userId)
+        const evtObj = {
+          id: _id,
+          ...evtRest,
+          user: evtUser,
+        }
+
+        events[idx] = evtObj
+        ++idx
+      }
+
+      return events
+    },
   },
   Mutation: {
     async createNewEvent(_, { createEventInput }, context) {
@@ -129,6 +224,7 @@ module.exports = {
       return { id: res._id, ...res._doc, user: user }
     },
     async updateCompEvent(_, { evtId }, context) {
+      var now = new Date()
       const user = checkAuth(context)
 
       if (!user) {
@@ -147,7 +243,7 @@ module.exports = {
           {
             $set: {
               isCompleted: true,
-              compDate: Date.now().format('YYYY-MM-DDTHH:mm:ss').toString(),
+              compDate: now.toISOString(),
             },
           },
           { new: true }
@@ -192,7 +288,7 @@ module.exports = {
         )
 
         pubsub.publish('EVENT_UPDATED', {
-          updateForecast: {
+          eventUpdated: {
             id: updateForecast._id,
             ...updateForecast._doc,
             user: user,
@@ -272,7 +368,7 @@ module.exports = {
       }
 
       try {
-        const deleteEvent = Event.findByIdAndUpdate(
+        const deleteEvent = await Event.findByIdAndUpdate(
           { _id: evtId },
           {
             $set: {
@@ -342,7 +438,7 @@ module.exports = {
 
           if (user.isManager) {
             return true
-          } else if (payload.eventCreated.user.id === user.id) {
+          } else if (payload.eventUpdated.user.id === user.id) {
             return true
           } else {
             return false
