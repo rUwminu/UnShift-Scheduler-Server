@@ -5,7 +5,7 @@ const customerSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'users',
   },
-  fullname: {
+  personal: {
     type: String,
     default: '',
   },

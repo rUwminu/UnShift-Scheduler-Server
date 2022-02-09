@@ -11,8 +11,14 @@ const eventSchema = new Schema(
       default: '',
     },
     customer: {
-      type: Schema.Types.ObjectId,
-      ref: 'customers',
+      cusId: {
+        type: Schema.Types.ObjectId,
+        ref: 'customers',
+      },
+      personal: {
+        type: String,
+        default: '',
+      },
     },
     description: {
       type: String,
