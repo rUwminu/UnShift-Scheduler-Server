@@ -1,6 +1,7 @@
 const userResolvers = require('./userResolver')
 const customerResolver = require('./customerResolver')
 const eventResolvers = require('./eventResolver')
+const { GraphQLDateTime } = require('graphql-iso-date')
 
 module.exports = {
   Query: {
@@ -16,4 +17,5 @@ module.exports = {
   Subscription: {
     ...eventResolvers.Subscription,
   },
+  ISODate: GraphQLDateTime,
 }

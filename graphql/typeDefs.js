@@ -1,6 +1,8 @@
 const { gql } = require('apollo-server-express')
 
 module.exports = gql`
+  scalar ISODate
+
   type User {
     id: ID!
     email: String!
@@ -8,7 +10,7 @@ module.exports = gql`
     username: String!
     password: String!
     isManager: Boolean!
-    createdAt: String!
+    createdAt: ISODate!
   }
   input RegisterInput {
     username: String!
@@ -62,6 +64,7 @@ module.exports = gql`
     address: String!
   }
   input UpdateCustomerInput {
+    id: ID!
     personal: String = ""
     company: String = ""
     personalcontact: String = ""
@@ -90,7 +93,7 @@ module.exports = gql`
     deleteUser(userId: ID!): String!
     createNewCustomer(createCustomerInput: CreateCustomerInput): Customer!
     updateExistCustomer(updateCustomerInput: UpdateCustomerInput): Customer!
-    deleteExistCustomer(cusId: ID!): String!
+    deleteExistCustomer(cusId: ID!): Customer!
     createNewEvent(createEventInput: CreateEventInput): Event!
     updateCompEvent(evtId: ID!): Event!
     updateForeEvent(evtId: ID!): Event!

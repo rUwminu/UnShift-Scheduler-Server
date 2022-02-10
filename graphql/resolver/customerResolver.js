@@ -24,7 +24,7 @@ module.exports = {
       return customers
     },
   },
-  Mutator: {
+  Mutation: {
     async createNewCustomer(_, { createCustomerInput }, context) {
       const user = checkAuth(context)
 
@@ -57,7 +57,7 @@ module.exports = {
       }
 
       const {
-        cusId,
+        id,
         personal,
         company,
         personalcontact,
@@ -65,14 +65,14 @@ module.exports = {
         address,
       } = updateCustomerInput
 
-      const findCustomer = await Customer.findById(cusId)
+      const findCustomer = await Customer.findById(id)
 
       if (!findCustomer) {
         throw new Error('User Not Found')
       }
 
       const updateCustomer = await Customer.findOneAndUpdate(
-        { _id: cusId },
+        { _id: id },
         {
           personal:
             personal.trim() !== '' || personal !== null
@@ -119,7 +119,7 @@ module.exports = {
 
       if (user.id === targetCustomer.user) {
         await targetCustomer.delete()
-        return 'Customer Deleted'
+        return targetCustomer
       } else {
         throw new Error('Action not allow')
       }
