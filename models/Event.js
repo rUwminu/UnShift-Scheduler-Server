@@ -19,12 +19,19 @@ const eventSchema = new Schema(
         type: String,
         default: '',
       },
+      company: {
+        type: String,
+        default: '',
+      },
     },
     description: {
       type: String,
       default: '',
     },
-    planDate: String,
+    planDate: {
+      type: String,
+      default: '',
+    },
     compDate: {
       type: String,
       default: '',

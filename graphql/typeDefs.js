@@ -39,6 +39,7 @@ module.exports = gql`
   input CustomerInfoInput {
     cusId: ID!
     personal: String!
+    company: String!
   }
   input CreateEventInput {
     title: String!
