@@ -135,13 +135,13 @@ module.exports = {
       { userId, email, username, password, confirmPassword },
       context
     ) {
-      user = checkAuth(context)
-
-      const findUser = await User.findById(userId)
+      const user = checkAuth(context)
 
       if (!user) {
         throw new Error('User Not Authorize')
       }
+
+      const findUser = await User.findById(userId)
 
       if (password && password !== '' && password !== null) {
         if (password === confirmPassword) {
@@ -165,7 +165,9 @@ module.exports = {
           { new: true }
         )
 
-        return updateUser
+        const token = generateToken(updateUser)
+
+        return { id: updateUser._id, ...updateUser._doc, token }
       } catch (err) {
         throw new Error(err)
       }

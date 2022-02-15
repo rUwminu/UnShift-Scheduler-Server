@@ -18,7 +18,9 @@ module.exports = {
             login: 'User Not Login',
           },
         })
-      } else if (!user.isManager) {
+      }
+
+      if (!user.isManager) {
         throw new UserInputError('User Must Be Manager', {
           errors: {
             login: 'User Not Manager',
@@ -110,7 +112,17 @@ module.exports = {
       }
 
       var events = []
-      if (endDate === null || endDate === '') {
+      if (endDate && startDate) {
+        events = await Event.find({
+          user: user.id,
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+            $lte: new Date(endDate).toISOString(),
+          },
+        }).sort({
+          planDate: 1,
+        })
+      } else if (!endDate && startDate) {
         events = await Event.find({
           user: user.id,
           planDate: {
@@ -119,13 +131,18 @@ module.exports = {
         }).sort({
           planDate: -1,
         })
-      } else {
+      } else if (!startDate && endDate) {
         events = await Event.find({
           user: user.id,
           planDate: {
-            $gte: new Date(startDate).toISOString(),
             $lte: new Date(endDate).toISOString(),
           },
+        }).sort({
+          planDate: -1,
+        })
+      } else {
+        events = await Event.find({
+          user: user.id,
         }).sort({
           planDate: -1,
         })
@@ -155,7 +172,17 @@ module.exports = {
       }
 
       var events = []
-      if (endDate === null || endDate === '') {
+      if (endDate && startDate) {
+        events = await Event.find({
+          user: { $ne: user.id },
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+            $lte: new Date(endDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
+      } else if (!endDate && startDate) {
         events = await Event.find({
           user: { $ne: user.id },
           planDate: {
@@ -164,13 +191,18 @@ module.exports = {
         }).sort({
           planDate: -1,
         })
-      } else {
+      } else if (!startDate && endDate) {
         events = await Event.find({
           user: { $ne: user.id },
           planDate: {
-            $gte: new Date(startDate).toISOString(),
             $lte: new Date(endDate).toISOString(),
           },
+        }).sort({
+          planDate: -1,
+        })
+      } else {
+        events = await Event.find({
+          user: { $ne: user.id },
         }).sort({
           planDate: -1,
         })

@@ -35,6 +35,7 @@ module.exports = gql`
   type CustomerInfo {
     cusId: ID!
     personal: String!
+    company: String!
   }
   input CustomerInfoInput {
     cusId: ID!
@@ -78,7 +79,7 @@ module.exports = gql`
     getSelfCustomers: [Customer]
     getAllEvent(month: Int!, year: Int!): [Event]
     getSelfEvent(month: Int!, year: Int!): [Event]
-    getSelfSelectedEvent(startDate: String!, endDate: String): [Event]
+    getSelfSelectedEvent(startDate: String, endDate: String): [Event]
     getAllSelectedEvent(startDate: String!, endDate: String): [Event]
   }
   type Mutation {
