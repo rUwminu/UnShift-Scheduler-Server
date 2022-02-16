@@ -120,7 +120,7 @@ module.exports = {
             $lte: new Date(endDate).toISOString(),
           },
         }).sort({
-          planDate: 1,
+          planDate: -1,
         })
       } else if (!endDate && startDate) {
         events = await Event.find({
@@ -163,7 +163,7 @@ module.exports = {
     async getAllSelectedEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
 
-      if (!user || !user.isManager) {
+      if (!user && !user.isManager) {
         throw new UserInputError('User Must Login', {
           errors: {
             login: 'User Not Login',
@@ -174,7 +174,6 @@ module.exports = {
       var events = []
       if (endDate && startDate) {
         events = await Event.find({
-          user: { $ne: user.id },
           planDate: {
             $gte: new Date(startDate).toISOString(),
             $lte: new Date(endDate).toISOString(),
@@ -184,7 +183,6 @@ module.exports = {
         })
       } else if (!endDate && startDate) {
         events = await Event.find({
-          user: { $ne: user.id },
           planDate: {
             $gte: new Date(startDate).toISOString(),
           },
@@ -193,7 +191,6 @@ module.exports = {
         })
       } else if (!startDate && endDate) {
         events = await Event.find({
-          user: { $ne: user.id },
           planDate: {
             $lte: new Date(endDate).toISOString(),
           },
@@ -201,9 +198,7 @@ module.exports = {
           planDate: -1,
         })
       } else {
-        events = await Event.find({
-          user: { $ne: user.id },
-        }).sort({
+        events = await Event.find({}).sort({
           planDate: -1,
         })
       }

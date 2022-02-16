@@ -25,9 +25,17 @@ const generateToken = (user) => {
 
 module.exports = {
   Query: {
-    async getUsers() {
+    async getUsers(_, __, context) {
+      const user = checkAuth(context)
+
+      if (!user) {
+        throw new Error('User Not Authorize')
+      }
+
       try {
-        const users = await User.find().sort({ createdAt: -1 })
+        const users = await User.find({ _id: { $ne: user.id } }).sort({
+          createdAt: -1,
+        })
         return users
       } catch (err) {
         throw new Error(err)
