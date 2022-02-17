@@ -276,11 +276,15 @@ module.exports = {
           { new: true }
         )
 
+        const { _id, ...restUpdateComplete } = updateComplete._doc
+
+        const userInfo = await User.findById(restUpdateComplete.user)
+
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
-            id: updateComplete._id,
-            ...updateComplete._doc,
-            user: user,
+            id: _id,
+            ...restUpdateComplete,
+            user: userInfo,
           },
         })
 
@@ -314,11 +318,15 @@ module.exports = {
           { new: true }
         )
 
+        const { _id, ...restUpdateForecast } = updateForecast._doc
+
+        const userInfo = await User.findById(restUpdateForecast.user)
+
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
             id: updateForecast._id,
             ...updateForecast._doc,
-            user: user,
+            user: userInfo,
           },
         })
 
@@ -353,6 +361,11 @@ module.exports = {
 
         if (updateReschedule) {
           const { _id, ...updateRescheduleRest } = updateReschedule._doc
+
+          const userInfo = await User.findOne({
+            _id: updateRescheduleRest.user,
+          })
+
           const newEvent = new Event({
             ...updateRescheduleRest,
             planDate,
@@ -361,19 +374,19 @@ module.exports = {
           const res = await newEvent.save()
 
           pubsub.publish('EVENT_UPDATED', {
-            eventCreated: {
+            eventUpdated: {
               id: updateReschedule._id,
               ...updateReschedule._doc,
-              user: user,
+              user: userInfo,
               isRescheduled: true,
             },
           })
 
           pubsub.publish('EVENT_CREATED', {
-            eventUpdated: {
+            eventCreated: {
               id: res._id,
               ...res._doc,
-              user: user,
+              user: userInfo,
             },
           })
 
