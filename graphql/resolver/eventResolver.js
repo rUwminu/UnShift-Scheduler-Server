@@ -112,12 +112,15 @@ module.exports = {
       }
 
       var events = []
+      var endDateToDay = ''
       if (endDate && startDate) {
+        endDateToDay = new Date(endDate)
+        endDateToDay.setDate(endDateToDay.getDate() + 1)
         events = await Event.find({
           user: user.id,
           planDate: {
             $gte: new Date(startDate).toISOString(),
-            $lte: new Date(endDate).toISOString(),
+            $lte: endDateToDay.toISOString(),
           },
         }).sort({
           planDate: -1,
@@ -132,10 +135,12 @@ module.exports = {
           planDate: -1,
         })
       } else if (!startDate && endDate) {
+        endDateToDay = new Date(endDate)
+        endDateToDay.setDate(endDateToDay.getDate() + 1)
         events = await Event.find({
           user: user.id,
           planDate: {
-            $lte: new Date(endDate).toISOString(),
+            $lte: endDateToDay.toISOString(),
           },
         }).sort({
           planDate: -1,
@@ -397,6 +402,7 @@ module.exports = {
       }
     },
     async updateCancelEvent(_, { evtId, remark }, context) {
+      var now = new Date()
       const user = checkAuth(context)
 
       if (!user) {
@@ -413,6 +419,7 @@ module.exports = {
           {
             $set: {
               isCancelled: true,
+              compDate: now.toISOString(),
               remark,
             },
           },
