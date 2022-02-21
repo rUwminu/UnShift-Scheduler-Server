@@ -60,6 +60,7 @@ module.exports = {
         id,
         personal,
         company,
+        position,
         personalcontact,
         companycontact,
         address,
@@ -82,6 +83,10 @@ module.exports = {
             company.trim() !== '' || company !== null
               ? company
               : findCustomer.company,
+          position:
+            position.trim() !== '' || position !== null
+              ? position
+              : findCustomer.position,
           personalcontact:
             personalcontact.trim() !== '' || personalcontact !== null
               ? personalcontact

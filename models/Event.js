@@ -19,6 +19,10 @@ const eventSchema = new Schema(
         type: String,
         default: '',
       },
+      position: {
+        type: String,
+        default: '',
+      },
       company: {
         type: String,
         default: '',

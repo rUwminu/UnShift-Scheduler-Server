@@ -35,11 +35,13 @@ module.exports = gql`
   type CustomerInfo {
     cusId: ID!
     personal: String!
+    position: String!
     company: String!
   }
   input CustomerInfoInput {
     cusId: ID!
     personal: String!
+    position: String!
     company: String!
   }
   input CreateEventInput {
@@ -54,14 +56,17 @@ module.exports = gql`
     id: ID!
     personal: String!
     company: String!
+    position: String!
     personalcontact: String!
     companycontact: String!
     address: String!
+    isShared: Boolean!
   }
   input CreateCustomerInput {
     personal: String!
     company: String!
-    personalcontact: String!
+    position: String!
+    personalcontact: String
     companycontact: String!
     address: String!
   }
@@ -69,6 +74,7 @@ module.exports = gql`
     id: ID!
     personal: String = ""
     company: String = ""
+    position: String = ""
     personalcontact: String = ""
     companycontact: String = ""
     address: String = ""

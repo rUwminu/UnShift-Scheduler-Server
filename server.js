@@ -19,7 +19,7 @@ const resolvers = require('./graphql/resolver')
 
 dotenv.config()
 ;(async function () {
-  const port = process.env.PORT || 4000
+  const port = process.env.PORT || 4040
 
   const app = express()
 

@@ -9,6 +9,10 @@ const customerSchema = new Schema({
     type: String,
     default: '',
   },
+  position: {
+    type: String,
+    default: '',
+  },
   company: {
     type: String,
     default: '',
@@ -24,6 +28,10 @@ const customerSchema = new Schema({
   address: {
     type: String,
     default: '',
+  },
+  isShared: {
+    type: Boolean,
+    default: false,
   },
 })
 
