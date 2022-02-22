@@ -9,7 +9,7 @@ const pubsub = new PubSub()
 
 module.exports = {
   Query: {
-    async getAllEvent(_, { month, year }, context) {
+    async getAllEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
 
       if (!user) {
@@ -30,15 +30,9 @@ module.exports = {
 
       const events = await Event.find({
         user: { $ne: user.id },
-        $expr: {
-          $or: [
-            {
-              $and: [
-                { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
-                { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
-              ],
-            },
-          ],
+        planDate: {
+          $gte: new Date(startDate).toISOString(),
+          $lte: new Date(endDate).toISOString(),
         },
       }).sort({
         createdAt: -1,
@@ -61,7 +55,7 @@ module.exports = {
 
       return events
     },
-    async getSelfEvent(_, { month, year }, context) {
+    async getSelfEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
 
       if (!user) {
@@ -72,17 +66,27 @@ module.exports = {
         })
       }
 
+      // const events = await Event.find({
+      //   user: user.id,
+      //   $expr: {
+      //     $or: [
+      //       {
+      //         $and: [
+      //           { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
+      //           { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
+      //         ],
+      //       },
+      //     ],
+      //   },
+      // }).sort({
+      //   createdAt: -1,
+      // })
+
       const events = await Event.find({
         user: user.id,
-        $expr: {
-          $or: [
-            {
-              $and: [
-                { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
-                { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
-              ],
-            },
-          ],
+        planDate: {
+          $gte: new Date(startDate).toISOString(),
+          $lte: new Date(endDate).toISOString(),
         },
       }).sort({
         createdAt: -1,

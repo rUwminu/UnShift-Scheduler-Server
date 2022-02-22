@@ -83,8 +83,8 @@ module.exports = gql`
     getUsers: [User]
     getUser(userId: ID!): User
     getSelfCustomers: [Customer]
-    getAllEvent(month: Int!, year: Int!): [Event]
-    getSelfEvent(month: Int!, year: Int!): [Event]
+    getAllEvent(startDate: String!, endDate: String!): [Event]
+    getSelfEvent(startDate: String!, endDate: String!): [Event]
     getSelfSelectedEvent(startDate: String, endDate: String): [Event]
     getAllSelectedEvent(startDate: String, endDate: String): [Event]
   }
