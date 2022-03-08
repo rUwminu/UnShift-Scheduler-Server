@@ -19,7 +19,7 @@ const generateToken = (user) => {
       isManager: user.isManager,
     },
     SECRET_KEY,
-    { expiresIn: '2d' }
+    { expiresIn: '10d' }
   )
 }
 

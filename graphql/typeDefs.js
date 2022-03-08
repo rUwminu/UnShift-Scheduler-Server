@@ -107,9 +107,11 @@ module.exports = gql`
     updateForeEvent(evtId: ID!): Event!
     updateRescEvent(evtId: ID!, planDate: String!): Event!
     updateCancelEvent(evtId: ID!, remark: String!): Event!
+    deleteEvent(evtId: ID!): String!
   }
   type Subscription {
     eventCreated: Event
     eventUpdated: Event
+    eventDeleted: Event
   }
 `

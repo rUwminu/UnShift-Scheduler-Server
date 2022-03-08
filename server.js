@@ -99,7 +99,7 @@ dotenv.config()
 
   mongoose
     .connect(localMongoDB, {
-      dbName: 'unshift-scheduler',
+      dbName: 'unshift-scheduler-pg',
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })

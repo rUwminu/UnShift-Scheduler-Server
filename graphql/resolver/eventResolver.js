@@ -1,5 +1,5 @@
 const { PubSub, withFilter } = require('graphql-subscriptions')
-const { UserInputError } = require('apollo-server-express')
+const { UserInputError, AuthenticationError } = require('apollo-server-express')
 
 const User = require('../../models/User')
 const Event = require('../../models/Event')
@@ -35,7 +35,7 @@ module.exports = {
           $lte: new Date(endDate).toISOString(),
         },
       }).sort({
-        createdAt: -1,
+        planDate: -1,
       })
 
       let idx = 0
@@ -89,7 +89,7 @@ module.exports = {
           $lte: new Date(endDate).toISOString(),
         },
       }).sort({
-        createdAt: -1,
+        planDate: -1,
       })
 
       events.forEach((evt, idx, theArray) => {
@@ -418,7 +418,7 @@ module.exports = {
       }
 
       try {
-        const deleteEvent = await Event.findByIdAndUpdate(
+        const cancelEvent = await Event.findByIdAndUpdate(
           { _id: evtId },
           {
             $set: {
@@ -432,13 +432,44 @@ module.exports = {
 
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
-            id: deleteEvent._id,
-            ...deleteEvent._doc,
+            id: cancelEvent._id,
+            ...cancelEvent._doc,
             user: user,
           },
         })
 
-        return deleteEvent
+        return cancelEvent
+      } catch (err) {
+        throw new Error(err)
+      }
+    },
+    async deleteEvent(_, { evtId }, context) {
+      const user = checkAuth(context)
+
+      if (!user) {
+        throw new UserInputError('User Must Login', {
+          errors: {
+            login: 'User Not Login',
+          },
+        })
+      }
+
+      try {
+        const event = await Event.findById(evtId)
+
+        if (!event) throw new AuthenticationError('Ticket Not Found')
+
+        await event.delete()
+
+        pubsub.publish('EVENT_DELETED', {
+          eventDeleted: {
+            id: event._id,
+            ...event._doc,
+            user: user,
+          },
+        })
+
+        return 'Event Deleted'
       } catch (err) {
         throw new Error(err)
       }
@@ -472,7 +503,7 @@ module.exports = {
       ),
     },
     eventUpdated: {
-      resolve: (payload, args, context) => {
+      resolve: (payload) => {
         if (payload && payload.eventUpdated) {
           return payload.eventUpdated
         }
@@ -490,6 +521,32 @@ module.exports = {
           if (user.isManager) {
             return true
           } else if (payload.eventUpdated.user.id === user.id) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
+    },
+    eventDeleted: {
+      resolve: (payload) => {
+        if (payload && payload.eventDeleted) {
+          return payload.eventDeleted
+        }
+        return payload
+      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('EVENT_DELETED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else if (payload.eventDeleted.user.id === user.id) {
             return true
           } else {
             return false
