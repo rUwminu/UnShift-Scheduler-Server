@@ -122,7 +122,7 @@ module.exports = {
         throw new Error('Customer Not Found')
       }
 
-      if (user.id === targetCustomer.user) {
+      if (user.id.toString() === targetCustomer.user.toString()) {
         await targetCustomer.delete()
         return targetCustomer
       } else {
