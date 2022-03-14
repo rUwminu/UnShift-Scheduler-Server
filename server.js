@@ -15,7 +15,7 @@ const { SubscriptionServer } = require('subscriptions-transport-ws')
 // graphql
 const typeDefs = require('./graphql/typeDefs.js')
 const resolvers = require('./graphql/resolver')
-//const { MONGODB } = require('./config.js')
+const { MONGODB } = require('./config.js')
 
 dotenv.config()
 ;(async function () {
@@ -94,11 +94,11 @@ dotenv.config()
     server.applyMiddleware({ app, cors: false })
   })
 
-  const localMongoDB = 'mongodb://localhost:27017/'
+  //const localMongoDB = 'mongodb://localhost:27017/'
   // live mongoDb => process.env.MONGO_URL
 
   mongoose
-    .connect(process.env.MONGO_URL, {
+    .connect(MONGODB, {
       dbName: 'unshift-scheduler-pg',
       useNewUrlParser: true,
       useUnifiedTopology: true,
