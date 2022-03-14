@@ -19,7 +19,7 @@ const resolvers = require('./graphql/resolver')
 
 dotenv.config()
 ;(async function () {
-  const port = process.env.PORT || 4040
+  const port = process.env.PORT || 4041
 
   const app = express()
 
@@ -98,7 +98,7 @@ dotenv.config()
   // live mongoDb => process.env.MONGO_URL
 
   mongoose
-    .connect(localMongoDB, {
+    .connect(process.env.MONGO_URL, {
       dbName: 'unshift-scheduler-pg',
       useNewUrlParser: true,
       useUnifiedTopology: true,
