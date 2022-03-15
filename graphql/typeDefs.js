@@ -39,10 +39,8 @@ module.exports = gql`
     company: String!
   }
   input CustomerInfoInput {
-    cusId: ID!
-    personal: String!
-    position: String!
-    company: String!
+    cusId: ID
+    company: String
   }
   input CreateEventInput {
     title: String!
@@ -57,8 +55,8 @@ module.exports = gql`
     personal: String!
     company: String!
     position: String!
-    personalcontact: String!
-    companycontact: String!
+    personalcontact: String
+    companycontact: String
     address: String!
     isShared: Boolean!
   }
@@ -99,6 +97,7 @@ module.exports = gql`
       confirmPassword: String
     ): User!
     deleteUser(userId: ID!): String!
+    changeUserLevel(userId: ID!): User!
     createNewCustomer(createCustomerInput: CreateCustomerInput): Customer!
     updateExistCustomer(updateCustomerInput: UpdateCustomerInput): Customer!
     deleteExistCustomer(cusId: ID!): Customer!
@@ -113,5 +112,7 @@ module.exports = gql`
     eventCreated: Event
     eventUpdated: Event
     eventDeleted: Event
+    customerCreated: Customer
+    eventCustomerCreated: Customer
   }
 `

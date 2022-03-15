@@ -3,6 +3,9 @@ const { UserInputError } = require('apollo-server-express')
 const User = require('../../models/User')
 const Customer = require('../../models/Customer')
 const checkAuth = require('../../utils/checkAuth')
+const { PubSub, withFilter } = require('graphql-subscriptions')
+
+const pubsub = new PubSub()
 
 module.exports = {
   Query: {
@@ -42,6 +45,14 @@ module.exports = {
       })
 
       const res = await newCustomer.save()
+
+      pubsub.publish('CUSTOMER_CREATED', {
+        customerCreated: {
+          id: res._id,
+          ...res._doc,
+          user: user,
+        },
+      })
 
       return { id: res._id, ...res._doc }
     },
@@ -128,6 +139,34 @@ module.exports = {
       } else {
         throw new Error('Action not allow')
       }
+    },
+  },
+  Subscription: {
+    customerCreated: {
+      resolve: (payload) => {
+        if (payload && payload.customerCreated) {
+          return payload.customerCreated
+        }
+        return payload
+      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('CUSTOMER_CREATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else if (payload.customerCreated.user.id === user.id) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
     },
   },
 }

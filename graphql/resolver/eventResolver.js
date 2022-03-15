@@ -3,6 +3,7 @@ const { UserInputError, AuthenticationError } = require('apollo-server-express')
 
 const User = require('../../models/User')
 const Event = require('../../models/Event')
+const Customer = require('../../models/Customer')
 const checkAuth = require('../../utils/checkAuth')
 
 const pubsub = new PubSub()
@@ -38,22 +39,22 @@ module.exports = {
         planDate: -1,
       })
 
-      let idx = 0
-      for (const evt of events) {
-        const { _id, user: userId, ...evtRest } = evt._doc
+      const data = await Promise.all(
+        events.map(async (x) => {
+          const { _id, user: userId, customer, ...restEvt } = x._doc
+          const evtUser = await User.findById(userId)
+          const cusInfo = await Customer.findById(customer.cusId)
 
-        const evtUser = await User.findById(userId)
-        const evtObj = {
-          id: _id,
-          ...evtRest,
-          user: evtUser,
-        }
+          return {
+            id: _id,
+            user: evtUser,
+            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            ...restEvt,
+          }
+        })
+      )
 
-        events[idx] = evtObj
-        ++idx
-      }
-
-      return events
+      return data
     },
     async getSelfEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
@@ -66,43 +67,35 @@ module.exports = {
         })
       }
 
-      // const events = await Event.find({
-      //   user: user.id,
-      //   $expr: {
-      //     $or: [
-      //       {
-      //         $and: [
-      //           { $eq: [{ $month: { $toDate: '$planDate' } }, month] },
-      //           { $eq: [{ $year: { $toDate: '$planDate' } }, year] },
-      //         ],
-      //       },
-      //     ],
-      //   },
-      // }).sort({
-      //   createdAt: -1,
-      // })
+      try {
+        const events = await Event.find({
+          user: user.id,
+          planDate: {
+            $gte: new Date(startDate).toISOString(),
+            $lte: new Date(endDate).toISOString(),
+          },
+        }).sort({
+          planDate: -1,
+        })
 
-      const events = await Event.find({
-        user: user.id,
-        planDate: {
-          $gte: new Date(startDate).toISOString(),
-          $lte: new Date(endDate).toISOString(),
-        },
-      }).sort({
-        planDate: -1,
-      })
+        const data = await Promise.all(
+          events.map(async (x) => {
+            const { _id, customer, ...restEvt } = x._doc
+            const cusInfo = await Customer.findById(customer.cusId)
 
-      events.forEach((evt, idx, theArray) => {
-        const { _id, ...evtRest } = evt._doc
-        const evtObj = {
-          id: _id,
-          ...evtRest,
-          user,
-        }
-        theArray[idx] = evtObj
-      })
+            return {
+              id: _id,
+              user,
+              customer: { cusId: cusInfo._id, ...cusInfo._doc },
+              ...restEvt,
+            }
+          })
+        )
 
-      return events
+        return data
+      } catch (err) {
+        throw new Error(err)
+      }
     },
     async getSelfSelectedEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
@@ -232,6 +225,8 @@ module.exports = {
   },
   Mutation: {
     async createNewEvent(_, { createEventInput }, context) {
+      let res
+      let cusRes
       const user = checkAuth(context)
 
       if (!user) {
@@ -242,18 +237,57 @@ module.exports = {
         })
       }
 
-      const newEvent = new Event({
-        user: user.id,
-        ...createEventInput,
-      })
+      if (
+        createEventInput.customer.cusId === '' ||
+        createEventInput.customer.cusId === null
+      ) {
+        const newCustomer = new Customer({
+          user: user.id,
+          company: createEventInput.customer.company,
+          personal: 'Info Needed',
+          position: 'Info Needed',
+          personalcontact: '',
+          companycontact: '07 0001111',
+          address: 'Please Update This Customer Info As Needed.',
+        })
 
-      const res = await newEvent.save()
+        cusRes = await newCustomer.save()
+
+        const newEvent = new Event({
+          ...createEventInput,
+          user: user.id,
+          customer: { cusId: newCustomer._id },
+        })
+
+        pubsub.publish('EVENT_CUSTOMER_CREATED', {
+          eventCustomerCreated: {
+            id: cusRes._id,
+            ...cusRes._doc,
+            user: user,
+          },
+        })
+
+        res = await newEvent.save()
+      } else {
+        const newEvent = new Event({
+          user: user.id,
+          ...createEventInput,
+        })
+
+        res = await newEvent.save()
+      }
+
+      const cusInfo = await Customer.findById(res.customer.cusId)
 
       pubsub.publish('EVENT_CREATED', {
         eventCreated: {
           id: res._id,
           ...res._doc,
           user: user,
+          customer: {
+            cusId: cusInfo._id,
+            ...cusInfo._doc,
+          },
         },
       })
 
@@ -285,15 +319,20 @@ module.exports = {
           { new: true }
         )
 
-        const { _id, ...restUpdateComplete } = updateComplete._doc
+        const { _id, customer, ...restUpdateComplete } = updateComplete._doc
 
         const userInfo = await User.findById(restUpdateComplete.user)
+        const cusInfo = await Customer.findById(customer.cusId)
 
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
             id: _id,
             ...restUpdateComplete,
             user: userInfo,
+            customer: {
+              cusId: cusInfo._id,
+              ...cusInfo._doc,
+            },
           },
         })
 
@@ -327,15 +366,20 @@ module.exports = {
           { new: true }
         )
 
-        const { _id, ...restUpdateForecast } = updateForecast._doc
+        const { _id, customer, ...restUpdateForecast } = updateForecast._doc
 
         const userInfo = await User.findById(restUpdateForecast.user)
+        const cusInfo = await Customer.findById(customer.cusId)
 
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
-            id: updateForecast._id,
-            ...updateForecast._doc,
+            id: _id,
+            ...restUpdateForecast,
             user: userInfo,
+            customer: {
+              cusId: cusInfo._id,
+              ...cusInfo._doc,
+            },
           },
         })
 
@@ -374,6 +418,9 @@ module.exports = {
           const userInfo = await User.findOne({
             _id: updateRescheduleRest.user,
           })
+          const cusInfo = await Customer.findById(
+            updateRescheduleRest.customer.cusId
+          )
 
           const newEvent = new Event({
             ...updateRescheduleRest,
@@ -384,10 +431,13 @@ module.exports = {
 
           pubsub.publish('EVENT_UPDATED', {
             eventUpdated: {
-              id: updateReschedule._id,
-              ...updateReschedule._doc,
+              id: _id,
+              ...updateRescheduleRest,
               user: userInfo,
-              isRescheduled: true,
+              customer: {
+                cusId: cusInfo._id,
+                ...cusInfo._doc,
+              },
             },
           })
 
@@ -396,6 +446,10 @@ module.exports = {
               id: res._id,
               ...res._doc,
               user: userInfo,
+              customer: {
+                cusId: cusInfo._id,
+                ...cusInfo._doc,
+              },
             },
           })
 
@@ -430,11 +484,22 @@ module.exports = {
           { new: true }
         )
 
+        const { _id, ...updateCancelRest } = cancelEvent._doc
+
+        const userInfo = await User.findOne({
+          _id: updateCancelRest.user,
+        })
+        const cusInfo = await Customer.findById(updateCancelRest.customer.cusId)
+
         pubsub.publish('EVENT_UPDATED', {
           eventUpdated: {
-            id: cancelEvent._id,
-            ...cancelEvent._doc,
-            user: user,
+            id: _id,
+            ...updateCancelRest,
+            user: userInfo,
+            customer: {
+              cusId: cusInfo._id,
+              ...cusInfo._doc,
+            },
           },
         })
 
@@ -547,6 +612,32 @@ module.exports = {
           if (user.isManager) {
             return true
           } else if (payload.eventDeleted.user.id === user.id) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
+    },
+    eventCustomerCreated: {
+      resolve: (payload) => {
+        if (payload && payload.eventCustomerCreated) {
+          return payload.eventCustomerCreated
+        }
+        return payload
+      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('EVENT_CUSTOMER_CREATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else if (payload.eventCustomerCreated.user.id === user.id) {
             return true
           } else {
             return false

@@ -19,7 +19,7 @@ const { MONGODB } = require('./config.js')
 
 dotenv.config()
 ;(async function () {
-  const port = process.env.PORT || 4041
+  const port = process.env.PORT || 4040
 
   const app = express()
 
@@ -94,11 +94,11 @@ dotenv.config()
     server.applyMiddleware({ app, cors: false })
   })
 
-  //const localMongoDB = 'mongodb://localhost:27017/'
+  const localMongoDB = 'mongodb://localhost:27017/'
   // live mongoDb => process.env.MONGO_URL
 
   mongoose
-    .connect(MONGODB, {
+    .connect(localMongoDB, {
       dbName: 'unshift-scheduler-pg',
       useNewUrlParser: true,
       useUnifiedTopology: true,

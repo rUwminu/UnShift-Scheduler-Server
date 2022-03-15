@@ -16,6 +16,7 @@ module.exports = {
   },
   Subscription: {
     ...eventResolvers.Subscription,
+    ...customerResolver.Subscription,
   },
   ISODate: GraphQLDateTime,
 }

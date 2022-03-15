@@ -180,6 +180,33 @@ module.exports = {
         throw new Error(err)
       }
     },
+    async changeUserLevel(_, { userId }, context) {
+      const user = checkAuth(context)
+
+      if (!user || !user.isManager) {
+        throw new Error('User Not Authorize')
+      }
+
+      try {
+        const findUser = await User.findById(userId)
+
+        if (findUser) {
+          const updateUser = await User.findOneAndUpdate(
+            { _id: userId },
+            {
+              isManager: !findUser.isManager,
+            },
+            { new: true }
+          )
+
+          return { id: updateUser._id, ...updateUser._doc }
+        }
+
+        throw new Error('user Not Found')
+      } catch (err) {
+        throw new Error(err)
+      }
+    },
     async deleteUser(_, { userId }, context) {
       const user = checkAuth(context)
 
