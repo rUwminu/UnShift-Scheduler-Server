@@ -19,7 +19,7 @@ const { MONGODB } = require('./config.js')
 
 dotenv.config()
 ;(async function () {
-  const port = process.env.PORT || 4040
+  const port = process.env.PORT || 4040 // 4041 live local
 
   const app = express()
 

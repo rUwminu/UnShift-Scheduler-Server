@@ -80,11 +80,12 @@ module.exports = gql`
   type Query {
     getUsers: [User]
     getUser(userId: ID!): User
+    getAllCustomers: [Customer]
     getSelfCustomers: [Customer]
     getAllEvent(startDate: String!, endDate: String!): [Event]
     getSelfEvent(startDate: String!, endDate: String!): [Event]
-    getSelfSelectedEvent(startDate: String, endDate: String): [Event]
     getAllSelectedEvent(startDate: String, endDate: String): [Event]
+    getSelfSelectedEvent(startDate: String, endDate: String): [Event]
   }
   type Mutation {
     register(registerInput: RegisterInput): User!

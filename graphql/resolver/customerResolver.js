@@ -9,6 +9,23 @@ const pubsub = new PubSub()
 
 module.exports = {
   Query: {
+    async getAllCustomers(_, __, context) {
+      const user = checkAuth(context)
+
+      if (!user) {
+        throw new UserInputError('User Must Login', {
+          errors: {
+            login: 'User Not Login',
+          },
+        })
+      }
+
+      const customers = await Customer.find({
+        user: { $ne: user.id },
+      })
+
+      return customers
+    },
     async getSelfCustomers(_, __, context) {
       const user = checkAuth(context)
 

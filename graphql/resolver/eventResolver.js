@@ -150,17 +150,22 @@ module.exports = {
         })
       }
 
-      events.forEach((evt, idx, theArray) => {
-        const { _id, ...evtRest } = evt._doc
-        const evtObj = {
-          id: _id,
-          ...evtRest,
-          user,
-        }
-        theArray[idx] = evtObj
-      })
+      const data = await Promise.all(
+        events.map(async (x) => {
+          const { _id, user: userId, customer, ...restEvt } = x._doc
+          const evtUser = await User.findById(userId)
+          const cusInfo = await Customer.findById(customer.cusId)
 
-      return events
+          return {
+            id: _id,
+            user: evtUser,
+            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            ...restEvt,
+          }
+        })
+      )
+
+      return data
     },
     async getAllSelectedEvent(_, { startDate, endDate }, context) {
       const user = checkAuth(context)
@@ -205,22 +210,22 @@ module.exports = {
         })
       }
 
-      let idx = 0
-      for (const evt of events) {
-        const { _id, user: userId, ...evtRest } = evt._doc
+      const data = await Promise.all(
+        events.map(async (x) => {
+          const { _id, user: userId, customer, ...restEvt } = x._doc
+          const evtUser = await User.findById(userId)
+          const cusInfo = await Customer.findById(customer.cusId)
 
-        const evtUser = await User.findById(userId)
-        const evtObj = {
-          id: _id,
-          ...evtRest,
-          user: evtUser,
-        }
+          return {
+            id: _id,
+            user: evtUser,
+            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            ...restEvt,
+          }
+        })
+      )
 
-        events[idx] = evtObj
-        ++idx
-      }
-
-      return events
+      return data
     },
   },
   Mutation: {
@@ -244,8 +249,8 @@ module.exports = {
         const newCustomer = new Customer({
           user: user.id,
           company: createEventInput.customer.company,
-          personal: 'Info Needed',
-          position: 'Info Needed',
+          personal: 'Personal Name Needed',
+          position: 'Position Title Needed',
           personalcontact: '',
           companycontact: '07 0001111',
           address: 'Please Update This Customer Info As Needed.',
