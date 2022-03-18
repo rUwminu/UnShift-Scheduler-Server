@@ -65,7 +65,7 @@ module.exports = gql`
     company: String!
     position: String!
     personalcontact: String
-    companycontact: String!
+    companycontact: String
     address: String!
   }
   input UpdateCustomerInput {
