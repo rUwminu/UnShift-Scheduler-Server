@@ -423,6 +423,7 @@ module.exports = {
           const userInfo = await User.findOne({
             _id: updateRescheduleRest.user,
           })
+
           const cusInfo = await Customer.findById(
             updateRescheduleRest.customer.cusId
           )
@@ -443,6 +444,7 @@ module.exports = {
                 cusId: cusInfo._id,
                 ...cusInfo._doc,
               },
+              isRescheduled: true,
             },
           })
 
