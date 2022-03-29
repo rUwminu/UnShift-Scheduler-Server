@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid')
 const { PubSub, withFilter } = require('graphql-subscriptions')
 const { UserInputError, AuthenticationError } = require('apollo-server-express')
 
@@ -7,6 +8,19 @@ const Customer = require('../../models/Customer')
 const checkAuth = require('../../utils/checkAuth')
 
 const pubsub = new PubSub()
+
+// Dummy if user/contact not found
+const nullUser = {
+  id: uuidv4(),
+  username: 'User Not Found',
+}
+
+const nullCus = {
+  cusId: uuidv4(),
+  personal: 'Not Found',
+  position: 'Not Found',
+  company: 'Customer Contact Not Found',
+}
 
 module.exports = {
   Query: {
@@ -47,8 +61,10 @@ module.exports = {
 
           return {
             id: _id,
-            user: evtUser,
-            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            user: evtUser ? evtUser : nullUser,
+            customer: cusInfo
+              ? { cusId: cusInfo._id, ...cusInfo._doc }
+              : nullCus,
             ...restEvt,
           }
         })
@@ -86,7 +102,9 @@ module.exports = {
             return {
               id: _id,
               user,
-              customer: { cusId: cusInfo._id, ...cusInfo._doc },
+              customer: cusInfo
+                ? { cusId: cusInfo._id, ...cusInfo._doc }
+                : nullCus,
               ...restEvt,
             }
           })
@@ -159,7 +177,9 @@ module.exports = {
           return {
             id: _id,
             user: evtUser,
-            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            customer: cusInfo
+              ? { cusId: cusInfo._id, ...cusInfo._doc }
+              : nullCus,
             ...restEvt,
           }
         })
@@ -218,8 +238,10 @@ module.exports = {
 
           return {
             id: _id,
-            user: evtUser,
-            customer: { cusId: cusInfo._id, ...cusInfo._doc },
+            user: evtUser ? evtUser : nullUser,
+            customer: cusInfo
+              ? { cusId: cusInfo._id, ...cusInfo._doc }
+              : nullCus,
             ...restEvt,
           }
         })
@@ -246,33 +268,47 @@ module.exports = {
         createEventInput.customer.cusId === '' ||
         createEventInput.customer.cusId === null
       ) {
-        const newCustomer = new Customer({
-          user: user.id,
+        const checkExist = await Customer.findOne({
           company: createEventInput.customer.company,
-          personal: 'Personal Name Needed',
-          position: 'Position Title Needed',
-          personalcontact: '',
-          companycontact: '07 0001111',
-          address: 'Please Update This Customer Info As Needed.',
         })
 
-        cusRes = await newCustomer.save()
+        if (!checkExist) {
+          const newCustomer = new Customer({
+            user: user.id,
+            company: createEventInput.customer.company,
+            personal: 'Personal Name Needed',
+            position: 'Position Title Needed',
+            personalcontact: '',
+            companycontact: '07 0001111',
+            address: 'Please Update This Customer Info As Needed.',
+          })
 
-        const newEvent = new Event({
-          ...createEventInput,
-          user: user.id,
-          customer: { cusId: newCustomer._id },
-        })
+          cusRes = await newCustomer.save()
 
-        pubsub.publish('EVENT_CUSTOMER_CREATED', {
-          eventCustomerCreated: {
-            id: cusRes._id,
-            ...cusRes._doc,
-            user: user,
-          },
-        })
+          pubsub.publish('EVENT_CUSTOMER_CREATED', {
+            eventCustomerCreated: {
+              id: cusRes._id,
+              ...cusRes._doc,
+              user: user,
+            },
+          })
 
-        res = await newEvent.save()
+          const newEvent = new Event({
+            ...createEventInput,
+            user: user.id,
+            customer: { cusId: newCustomer._id },
+          })
+
+          res = await newEvent.save()
+        } else {
+          const newEvent = new Event({
+            ...createEventInput,
+            user: user.id,
+            customer: { cusId: checkExist._id },
+          })
+
+          res = await newEvent.save()
+        }
       } else {
         const newEvent = new Event({
           user: user.id,
@@ -333,11 +369,13 @@ module.exports = {
           eventUpdated: {
             id: _id,
             ...restUpdateComplete,
-            user: userInfo,
-            customer: {
-              cusId: cusInfo._id,
-              ...cusInfo._doc,
-            },
+            user: userInfo ? userInfo : nullCus,
+            customer: cusInfo
+              ? {
+                  cusId: cusInfo._id,
+                  ...cusInfo._doc,
+                }
+              : nullCus,
           },
         })
 
@@ -380,11 +418,13 @@ module.exports = {
           eventUpdated: {
             id: _id,
             ...restUpdateForecast,
-            user: userInfo,
-            customer: {
-              cusId: cusInfo._id,
-              ...cusInfo._doc,
-            },
+            user: userInfo ? userInfo : nullUser,
+            customer: cusInfo
+              ? {
+                  cusId: cusInfo._id,
+                  ...cusInfo._doc,
+                }
+              : nullCus,
           },
         })
 
@@ -439,11 +479,13 @@ module.exports = {
             eventUpdated: {
               id: _id,
               ...updateRescheduleRest,
-              user: userInfo,
-              customer: {
-                cusId: cusInfo._id,
-                ...cusInfo._doc,
-              },
+              user: userInfo ? userInfo : nullUser,
+              customer: cusInfo
+                ? {
+                    cusId: cusInfo._id,
+                    ...cusInfo._doc,
+                  }
+                : nullCus,
               isRescheduled: true,
             },
           })
@@ -452,11 +494,13 @@ module.exports = {
             eventCreated: {
               id: res._id,
               ...res._doc,
-              user: userInfo,
-              customer: {
-                cusId: cusInfo._id,
-                ...cusInfo._doc,
-              },
+              user: userInfo ? userInfo : nullUser,
+              customer: cusInfo
+                ? {
+                    cusId: cusInfo._id,
+                    ...cusInfo._doc,
+                  }
+                : nullCus,
             },
           })
 
@@ -502,11 +546,13 @@ module.exports = {
           eventUpdated: {
             id: _id,
             ...updateCancelRest,
-            user: userInfo,
-            customer: {
-              cusId: cusInfo._id,
-              ...cusInfo._doc,
-            },
+            user: userInfo ? userInfo : nullUser,
+            customer: cusInfo
+              ? {
+                  cusId: cusInfo._id,
+                  ...cusInfo._doc,
+                }
+              : nullCus,
           },
         })
 

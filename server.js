@@ -19,7 +19,10 @@ const { MONGODB } = require('./config.js')
 
 dotenv.config()
 ;(async function () {
-  const port = process.env.PORT || 4040 // 4041 live local
+  // Port number is best to be 4 number length and start with number 4, Exp: 4000
+  // Exp port number: 4001, 4002, 4003 ~~~ 4999
+  // When Port number change here, make sure you also change in client port.config,js file
+  const port = process.env.PORT || 4040 // 4040 default <----- Change port to any you want
 
   const app = express()
 
