@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const { PubSub, withFilter } = require('graphql-subscriptions')
 const { UserInputError } = require('apollo-server-express')
 
 const { SECRET_KEY } = require('../../config')
@@ -9,6 +10,8 @@ const {
 } = require('../../utils/validators')
 const User = require('../../models/User')
 const checkAuth = require('../../utils/checkAuth')
+
+const pubsub = new PubSub()
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -130,6 +133,13 @@ module.exports = {
 
       const res = await newUser.save()
 
+      pubsub.publish('USER_CREATED', {
+        userCreated: {
+          id: res._id,
+          ...res._doc,
+        },
+      })
+
       const token = generateToken(res)
 
       return {
@@ -173,6 +183,13 @@ module.exports = {
           { new: true }
         )
 
+        pubsub.publish('USER_UPDATED', {
+          userUpdated: {
+            id: updateUser._id,
+            ...updateUser._doc,
+          },
+        })
+
         const token = generateToken(updateUser)
 
         return { id: updateUser._id, ...updateUser._doc, token }
@@ -198,6 +215,13 @@ module.exports = {
             },
             { new: true }
           )
+
+          pubsub.publish('USER_UPDATED', {
+            userUpdated: {
+              id: updateUser._id,
+              ...updateUser._doc,
+            },
+          })
 
           return { id: updateUser._id, ...updateUser._doc }
         }
@@ -229,6 +253,56 @@ module.exports = {
       } catch (err) {
         throw new Error(err)
       }
+    },
+  },
+  Subscription: {
+    userCreated: {
+      resolve: (payload) => {
+        if (payload && payload.userCreated) {
+          return payload.userCreated
+        }
+        return payload
+      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('USER_CREATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
+    },
+    userUpdated: {
+      resolve: (payload) => {
+        if (payload && payload.userUpdated) {
+          return payload.userUpdated
+        }
+        return payload
+      },
+      subscribe: withFilter(
+        () => pubsub.asyncIterator('USER_UPDATED'),
+        (payload, variables, context) => {
+          if (!payload) {
+            return false
+          }
+
+          const { user } = context
+
+          if (user.isManager) {
+            return true
+          } else {
+            return false
+          }
+        }
+      ),
     },
   },
 }

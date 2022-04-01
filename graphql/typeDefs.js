@@ -110,6 +110,8 @@ module.exports = gql`
     deleteEvent(evtId: ID!): String!
   }
   type Subscription {
+    userCreated: User
+    userUpdated: User
     eventCreated: Event
     eventUpdated: Event
     eventDeleted: Event
