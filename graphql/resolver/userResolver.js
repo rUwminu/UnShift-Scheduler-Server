@@ -148,6 +148,25 @@ module.exports = {
         token,
       }
     },
+    async resetPassword(_, { email }) {
+      try {
+        const findUser = await User.findOneAndUpdate(
+          {
+            email,
+          },
+          {
+            password:
+              '$2a$12$Gshf19R9NMf/aStTL9GahOyd8vkr/gi9Q5SoEmTQnidZ40SdsrNXG',
+          },
+          { new: true }
+        )
+
+        return { id: findUser._id, ...findUser._doc }
+      } catch (err) {
+        errors.email = 'Email not found'
+        throw new UserInputError('Error', { errors })
+      }
+    },
     async updateProfile(
       _,
       { userId, email, username, password, confirmPassword },
