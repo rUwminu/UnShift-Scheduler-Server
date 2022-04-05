@@ -149,6 +149,7 @@ module.exports = {
       }
     },
     async resetPassword(_, { email }) {
+      // Focus Reset Password
       try {
         const findUser = await User.findOneAndUpdate(
           {
